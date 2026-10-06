@@ -22,7 +22,7 @@ fn main() -> eframe::Result {
     eframe::run_native(
         "eframe template",
         native_options,
-        Box::new(|cc| Ok(Box::new(voronoi::VoronoiApp::new(cc)))),
+        Box::new(|cc| Ok(Box::new(voronoi_gui::VoronoiApp::new(cc)))),
     )
 }
 
