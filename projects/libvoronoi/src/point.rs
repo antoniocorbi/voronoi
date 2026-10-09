@@ -132,10 +132,11 @@ impl DivAssign<f32> for Point {
 mod tests {
     use super::*;
 
-    const EPSILON: f32 = 1e-6;
+    // const EPSILON: f32 = 1e-6;
 
     /// Helper para comparar floats con tolerancia matemática
     fn approx_eq(a: f32, b: f32) -> bool {
+        const EPSILON: f32 = 1e-6;
         (a - b).abs() < EPSILON
     }
 
