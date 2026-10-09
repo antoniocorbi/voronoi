@@ -19,6 +19,7 @@ alias cl := clib
 alias rc := rcli
 alias rg := rgui
 alias l  := lib
+alias tl := tlib
 
 # List this help
 @default:
@@ -53,6 +54,9 @@ rcli: lib
 
 rgui: lib
     cargo r --bin voronoi_gui
+
+tlib:
+    cargo t --lib
 
 clib:
     cargo c --lib
