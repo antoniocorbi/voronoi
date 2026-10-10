@@ -30,6 +30,49 @@ impl Point {
     pub fn mid_point(&self, p: &Point) -> Self {
         Point::new((self.x + p.x) / 2.0, (self.y + p.y) / 2.0)
     }
+
+    pub fn point_prect(&self, p: &Point, x: f32) -> Self {
+        let mp = self.mid_point(p);
+        let m2 = self.pslope(p);
+        let b = mp.y - m2 * mp.x;
+        // dbg!(m2);
+        // dbg!(b);
+        let y = m2 * x + b;
+        // dbg!(y);
+        let pp = Point::new(x, y);
+
+        pp
+    }
+
+    pub fn slope(&self, p: &Point) -> f32 {
+        let x = p.x - self.x;
+        let y = p.y - self.y;
+        // let m = y / x;
+
+        if x.abs() < f32::EPSILON {
+            if y.abs() < f32::EPSILON {
+                f32::NAN // Puntos idénticos
+            } else {
+                f32::INFINITY // Línea vertical pura
+            }
+        } else {
+            y / x
+        }
+    }
+
+    pub fn pslope(&self, p: &Point) -> f32 {
+        let m = self.slope(p);
+
+        if m.is_nan() {
+            f32::NAN
+        } else if m.abs() < f32::EPSILON {
+            f32::INFINITY // Si la pendiente es 0 (horizontal), la perpendicular es vertical (infinito)
+        } else if m.is_infinite() {
+            0.0 // Si la pendiente es infinito (vertical), la perpendicular es 0 (horizontal)
+        } else {
+            -1.0 / m // Nota: la pendiente perpendicular es el opuesto recíproco (-1/m)
+        }
+    }
 }
 
 // ==========================================
@@ -126,7 +169,7 @@ impl DivAssign<f32> for Point {
 }
 
 // ┌───────┐
-// │ Tests │
+// │ Tests │---------------------------------------------------------------
 // └───────┘
 #[cfg(test)]
 mod tests {
@@ -140,6 +183,7 @@ mod tests {
         (a - b).abs() < EPSILON
     }
 
+    #[allow(dead_code)]
     fn point_approx_eq(p1: Point, p2: Point) -> bool {
         approx_eq(p1.x, p2.x) && approx_eq(p1.y, p2.y)
     }
@@ -308,5 +352,183 @@ mod tests {
 
         assert_eq!(mid.x, f32::INFINITY);
         assert_eq!(mid.y, f32::NEG_INFINITY);
+    }
+}
+
+#[cfg(test)]
+mod slope_tests {
+    use super::*;
+
+    fn approx_eq(a: f32, b: f32) -> bool {
+        const EPSILON: f32 = 1e-6;
+        (a - b).abs() < EPSILON || (a.is_nan() && b.is_nan())
+    }
+
+    #[test]
+    fn test_slope_video_yt() {
+        let p1 = Point::new(2.0, 20.0);
+        let p2 = Point::new(14.0, 24.0);
+        let m1 = p1.slope(&p2);
+        let m2 = -1.0 / m1;
+        assert!(approx_eq(m1, 0.3333333));
+        assert!(approx_eq(m2, -3.0));
+    }
+
+    #[test]
+    fn test_slope_standard_positive() {
+        let p1 = Point::new(0.0, 0.0);
+        let p2 = Point::new(2.0, 4.0);
+        let m = p1.slope(&p2);
+        assert!(approx_eq(m, 2.0));
+    }
+
+    #[test]
+    fn test_slope_standard_negative() {
+        let p1 = Point::new(1.0, 1.0);
+        let p2 = Point::new(3.0, -3.0);
+        // y = -3 - 1 = -4, x = 3 - 1 = 2 -> -4 / 2 = -2.0
+        let m = p1.slope(&p2);
+        assert!(approx_eq(m, -2.0));
+    }
+
+    #[test]
+    fn test_slope_horizontal_line() {
+        let p1 = Point::new(1.0, 5.0);
+        let p2 = Point::new(6.0, 5.0);
+        // y = 0, x = 5 -> 0.0 / 5.0 = 0.0
+        let m = p1.slope(&p2);
+        assert!(approx_eq(m, 0.0));
+    }
+
+    #[test]
+    fn test_slope_vertical_line() {
+        let p1 = Point::new(3.0, 2.0);
+        let p2 = Point::new(3.0, 10.0);
+        // y = 8, x = 0 -> 8 / 0 = Infinity
+        let m = p1.slope(&p2);
+        assert_eq!(m, f32::INFINITY);
+    }
+
+    #[test]
+    fn test_slope_same_point() {
+        let p1 = Point::new(4.0, 4.0);
+        let p2 = Point::new(4.0, 4.0);
+        // y = 0, x = 0 -> 0 / 0 = NaN
+        let m = p1.slope(&p2);
+        assert!(m.is_nan());
+    }
+
+    #[test]
+    fn test_pslope_standard() {
+        let p1 = Point::new(0.0, 0.0);
+        let p2 = Point::new(2.0, 4.0);
+        // slope = 2.0 -> pslope = 1.0 / 2.0 = 0.5
+        let ps = p1.pslope(&p2);
+        dbg!(ps);
+        assert!(approx_eq(ps, -0.5));
+    }
+
+    #[test]
+    fn test_pslope_horizontal_line() {
+        // Línea horizontal tiene slope = 0.0 -> pslope = 1.0 / 0.0 = Infinity
+        let p1 = Point::new(0.0, 3.0);
+        let p2 = Point::new(5.0, 3.0);
+        let ps = p1.pslope(&p2);
+        assert_eq!(ps, f32::INFINITY);
+    }
+
+    #[test]
+    fn test_pslope_vertical_line() {
+        // Línea vertical tiene slope = Infinity -> pslope = 1.0 / Inf = 0.0
+        let p1 = Point::new(2.0, 0.0);
+        let p2 = Point::new(2.0, 10.0);
+        let ps = p1.pslope(&p2);
+        assert!(approx_eq(ps, 0.0));
+    }
+
+    #[test]
+    fn test_pslope_same_point() {
+        // Misma posición da slope = NaN -> pslope = 1.0 / NaN = NaN
+        let p1 = Point::new(1.0, 1.0);
+        let p2 = Point::new(1.0, 1.0);
+        let ps = p1.pslope(&p2);
+        assert!(ps.is_nan());
+    }
+}
+
+#[cfg(test)]
+mod point_prect_tests {
+    use super::*;
+
+    fn approx_eq(a: f32, b: f32) -> bool {
+        const EPSILON: f32 = 1e-6;
+        (a - b).abs() < EPSILON || (a.is_nan() && b.is_nan())
+    }
+
+    #[test]
+    fn test_point_prect_standard() {
+        // Segmento de (0,0) a (4,4)
+        // Punto medio = (2,2)
+        // Pendiente del segmento = 1.0 -> pslope = -1.0
+        // Ecuación de la mediatriz: y - 2 = -1 * (x - 2) => y = -x + 4
+        let p1 = Point::new(0.0, 0.0);
+        let p2 = Point::new(4.0, 4.0);
+
+        // Evaluamos en x = 1.0 -> y = -1.0 + 4.0 = 3.0
+        let res = p1.point_prect(&p2, 1.0);
+        assert!(approx_eq(res.x, 1.0));
+        assert!(approx_eq(res.y, 3.0));
+    }
+
+    #[test]
+    fn test_point_prect_at_midpoint_x() {
+        // Evaluar en la misma coordenada x del punto medio debe devolver la altura del punto medio
+        let p1 = Point::new(2.0, 1.0);
+        let p2 = Point::new(6.0, 5.0);
+        // Punto medio = (4.0, 3.0)
+        let mp_x = 4.0;
+
+        let res = p1.point_prect(&p2, mp_x);
+        assert!(approx_eq(res.x, 4.0));
+        assert!(approx_eq(res.y, 3.0));
+    }
+
+    #[test]
+    fn test_point_prect_horizontal_segment() {
+        // Segmento horizontal: p1(0, 2) y p2(4, 2)
+        // Punto medio = (2, 2). Slope = 0.0 -> pslope = Infinity.
+        let p1 = Point::new(0.0, 2.0);
+        let p2 = Point::new(4.0, 2.0);
+
+        let res = p1.point_prect(&p2, 2.0);
+
+        // dbg!(res);
+
+        // Al involucrar infinitos en f32, verificamos el comportamiento esperado de la aritmética flotante
+        assert!(approx_eq(res.x, 2.0));
+        assert!(res.y.is_nan());
+    }
+
+    #[test]
+    fn test_point_prect_vertical_segment() {
+        // Segmento vertical: p1(3, 0) y p2(3, 4)
+        // Punto medio = (3, 2). Slope = Inf -> pslope = 0.0.
+        // La mediatriz es horizontal: y = 2.0
+        let p1 = Point::new(3.0, 0.0);
+        let p2 = Point::new(3.0, 4.0);
+
+        // Evaluamos en cualquier x, por ejemplo x = 10.0 -> y debe ser 2.0
+        let res = p1.point_prect(&p2, 10.0);
+        assert!(approx_eq(res.x, 10.0));
+        assert!(approx_eq(res.y, 2.0));
+    }
+
+    #[test]
+    fn test_point_prect_same_point() {
+        let p1 = Point::new(5.0, 5.0);
+        let p2 = Point::new(5.0, 5.0);
+
+        let res = p1.point_prect(&p2, 1.0);
+        assert!(res.x.is_nan() || res.y.is_nan());
     }
 }
