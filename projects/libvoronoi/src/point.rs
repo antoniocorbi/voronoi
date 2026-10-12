@@ -14,7 +14,10 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // -- Uses: ---------------------------------------------------------------
+//use rand::prelude::*;
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
+
+use rand::RngExt; // provides the `random` method
 
 // -- Data Types: ---------------------------------------------------------
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -33,6 +36,14 @@ pub struct Point {
 
 // -- Implementation: -----------------------------------------------------
 impl Point {
+    pub fn random_01() -> Self {
+        let mut rng = rand::rng(); // a local handle to the generator
+        let x: f32 = rng.random();
+        let y: f32 = rng.random();
+
+        Point::new(x, y)
+    }
+
     pub fn new(x: f32, y: f32) -> Self {
         Self { x, y }
     }
