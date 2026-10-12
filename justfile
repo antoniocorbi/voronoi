@@ -55,8 +55,9 @@ rcli: lib
 rgui: lib
     cargo r --bin voronoi_gui
 
-tlib:
-    cargo t --lib
+default_tests := ""
+tlib tests=default_tests:
+    cargo t --lib {{tests}}
 
 clib:
     cargo c --lib

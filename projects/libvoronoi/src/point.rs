@@ -16,12 +16,22 @@
 // -- Uses: ---------------------------------------------------------------
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
+// -- Data Types: ---------------------------------------------------------
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Line {
+    /// Línea definida por y = mx + b
+    Sloped { m: f32, b: f32 },
+    /// Línea vertical x = c
+    Vertical { x: f32 },
+}
+
 #[derive(Clone, Copy, PartialEq, Debug, Default)]
 pub struct Point {
     pub x: f32,
     pub y: f32,
 }
 
+// -- Implementation: -----------------------------------------------------
 impl Point {
     pub fn new(x: f32, y: f32) -> Self {
         Self { x, y }
@@ -31,7 +41,7 @@ impl Point {
         Point::new((self.x + p.x) / 2.0, (self.y + p.y) / 2.0)
     }
 
-    pub fn point_prect(&self, p: &Point, x: f32) -> Self {
+    pub fn point_in_perp_rect(&self, p: &Point, x: f32) -> Self {
         let mp = self.mid_point(p);
         let m2 = self.pslope(p);
         let b = mp.y - m2 * mp.x;
@@ -60,6 +70,7 @@ impl Point {
         }
     }
 
+    // Perpendicular slope: -1/m
     pub fn pslope(&self, p: &Point) -> f32 {
         let m = self.slope(p);
 
@@ -75,6 +86,47 @@ impl Point {
     }
 }
 
+impl Point {
+    /// Calcula la mediatriz como un objeto Line robusto frente a infinitos
+    pub fn bisector_line(&self, p: &Point) -> Line {
+        let mp = self.mid_point(p);
+        let dx = p.x - self.x;
+        let dy = p.y - self.y;
+
+        // Si el segmento es horizontal (dy = 0), la mediatriz es vertical (x = mp.x)
+        if dy.abs() < f32::EPSILON {
+            return Line::Vertical { x: mp.x };
+        }
+
+        // Si el segmento es vertical (dx = 0), la mediatriz es horizontal (y = mp.y)
+        if dx.abs() < f32::EPSILON {
+            return Line::Sloped { m: 0.0, b: mp.y };
+        }
+
+        // Pendiente del segmento original y su perpendicular (-dx / dy)
+        let m_perp = -dx / dy;
+        let b = mp.y - m_perp * mp.x;
+
+        Line::Sloped { m: m_perp, b }
+    }
+
+    /// Implementación segura de point_prect usando Line
+    pub fn point_prect_safe(&self, p: &Point, target_x: f32) -> Self {
+        match self.bisector_line(p) {
+            Line::Vertical { x } => {
+                // Si la mediatriz es vertical, x es constante.  ¿Qué
+                // 'y' devolvemos? Por convención o proyección, o el
+                // 'y' del punto medio.
+                let mp = self.mid_point(p);
+                Point::new(x, mp.y)
+            }
+            Line::Sloped { m, b } => {
+                let y = m * target_x + b;
+                Point::new(target_x, y)
+            }
+        }
+    }
+}
 // ==========================================
 // SUMA (+ y +=)
 // ==========================================
@@ -475,7 +527,7 @@ mod point_prect_tests {
         let p2 = Point::new(4.0, 4.0);
 
         // Evaluamos en x = 1.0 -> y = -1.0 + 4.0 = 3.0
-        let res = p1.point_prect(&p2, 1.0);
+        let res = p1.point_in_perp_rect(&p2, 1.0);
         assert!(approx_eq(res.x, 1.0));
         assert!(approx_eq(res.y, 3.0));
     }
@@ -488,7 +540,7 @@ mod point_prect_tests {
         // Punto medio = (4.0, 3.0)
         let mp_x = 4.0;
 
-        let res = p1.point_prect(&p2, mp_x);
+        let res = p1.point_in_perp_rect(&p2, mp_x);
         assert!(approx_eq(res.x, 4.0));
         assert!(approx_eq(res.y, 3.0));
     }
@@ -500,7 +552,7 @@ mod point_prect_tests {
         let p1 = Point::new(0.0, 2.0);
         let p2 = Point::new(4.0, 2.0);
 
-        let res = p1.point_prect(&p2, 2.0);
+        let res = p1.point_in_perp_rect(&p2, 2.0);
 
         // dbg!(res);
 
@@ -518,7 +570,7 @@ mod point_prect_tests {
         let p2 = Point::new(3.0, 4.0);
 
         // Evaluamos en cualquier x, por ejemplo x = 10.0 -> y debe ser 2.0
-        let res = p1.point_prect(&p2, 10.0);
+        let res = p1.point_in_perp_rect(&p2, 10.0);
         assert!(approx_eq(res.x, 10.0));
         assert!(approx_eq(res.y, 2.0));
     }
@@ -528,7 +580,112 @@ mod point_prect_tests {
         let p1 = Point::new(5.0, 5.0);
         let p2 = Point::new(5.0, 5.0);
 
-        let res = p1.point_prect(&p2, 1.0);
+        let res = p1.point_in_perp_rect(&p2, 1.0);
         assert!(res.x.is_nan() || res.y.is_nan());
+    }
+}
+
+#[cfg(test)]
+mod bisector_safe_tests {
+    use super::*;
+
+    fn approx_eq(a: f32, b: f32) -> bool {
+        const EPSILON: f32 = 1e-6;
+        (a - b).abs() < EPSILON
+    }
+
+    // --- Tests para bisector_line ---
+
+    #[test]
+    fn test_bisector_line_standard() {
+        // Segmento de (0,0) a (4,4)
+        // Punto medio = (2,2). Pendiente segmento = 1.0 -> Perpendicular = -1.0
+        // Ecuación mediatriz: y - 2 = -1 * (x - 2) => y = -x + 4 (m = -1.0, b = 4.0)
+        let p1 = Point::new(0.0, 0.0);
+        let p2 = Point::new(4.0, 4.0);
+        let line = p1.bisector_line(&p2);
+
+        match line {
+            Line::Sloped { m, b } => {
+                assert!(approx_eq(m, -1.0));
+                assert!(approx_eq(b, 4.0));
+            }
+            Line::Vertical { .. } => panic!("Se esperaba una línea con pendiente, no vertical"),
+        }
+    }
+
+    #[test]
+    fn test_bisector_line_horizontal_segment() {
+        // Segmento horizontal: p1(0, 2) a p2(4, 2)
+        // La mediatriz debe ser una línea vertical exacta en x = 2.0
+        let p1 = Point::new(0.0, 2.0);
+        let p2 = Point::new(4.0, 2.0);
+        let line = p1.bisector_line(&p2);
+
+        match line {
+            Line::Vertical { x } => {
+                assert!(approx_eq(x, 2.0));
+            }
+            Line::Sloped { .. } => panic!("Se esperaba una línea vertical"),
+        }
+    }
+
+    #[test]
+    fn test_bisector_line_vertical_segment() {
+        // Segmento vertical: p1(3, 0) a p2(3, 4)
+        // La mediatriz debe ser una línea horizontal (m = 0.0) en y = 2.0
+        let p1 = Point::new(3.0, 0.0);
+        let p2 = Point::new(3.0, 4.0);
+        let line = p1.bisector_line(&p2);
+
+        match line {
+            Line::Sloped { m, b } => {
+                assert!(approx_eq(m, 0.0));
+                assert!(approx_eq(b, 2.0));
+            }
+            Line::Vertical { .. } => panic!("Se esperaba una línea con pendiente horizontal"),
+        }
+    }
+
+    // --- Tests para point_prect_safe ---
+
+    #[test]
+    fn test_point_prect_safe_standard() {
+        // Segmento de (0,0) a (4,4) -> Mediatriz y = -x + 4
+        let p1 = Point::new(0.0, 0.0);
+        let p2 = Point::new(4.0, 4.0);
+
+        // Evaluamos en x = 1.0 -> y = -1.0 + 4.0 = 3.0
+        let res = p1.point_prect_safe(&p2, 1.0);
+
+        assert!(approx_eq(res.x, 1.0));
+        assert!(approx_eq(res.y, 3.0));
+    }
+
+    #[test]
+    fn test_point_prect_safe_horizontal_segment() {
+        // Segmento horizontal p1(0,2) a p2(4,2) -> Mediatriz vertical x = 2.0
+        let p1 = Point::new(0.0, 2.0);
+        let p2 = Point::new(4.0, 2.0);
+
+        // Aunque pasemos cualquier target_x, la mediatriz vertical fuerza x = 2.0
+        // y devuelve la altura del punto medio (y = 2.0)
+        let res = p1.point_prect_safe(&p2, 5.0);
+
+        assert!(approx_eq(res.x, 2.0));
+        assert!(approx_eq(res.y, 2.0));
+    }
+
+    #[test]
+    fn test_point_prect_safe_vertical_segment() {
+        // Segmento vertical p1(3,0) a p2(3,4) -> Mediatriz horizontal y = 2.0
+        let p1 = Point::new(3.0, 0.0);
+        let p2 = Point::new(3.0, 4.0);
+
+        // Evaluamos en x = 10.0 -> la altura se mantiene constante en y = 2.0
+        let res = p1.point_prect_safe(&p2, 10.0);
+
+        assert!(approx_eq(res.x, 10.0));
+        assert!(approx_eq(res.y, 2.0));
     }
 }
