@@ -15,9 +15,9 @@
 
 // -- Uses: ---------------------------------------------------------------
 //use rand::prelude::*;
-use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
-
 use rand::RngExt; // provides the `random` method
+use std::fmt;
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 // -- Data Types: ---------------------------------------------------------
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -35,6 +35,13 @@ pub struct Point {
 }
 
 // -- Implementation: -----------------------------------------------------
+
+impl fmt::Display for Point {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "({}, {})", self.x, self.y)
+    }
+}
+
 impl Point {
     pub fn random_01() -> Self {
         let mut rng = rand::rng(); // a local handle to the generator
