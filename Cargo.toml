@@ -2,6 +2,6 @@
 resolver = "3"
 members = [
   "projects/libvoronoi",
-#    "projects/voronoi_cli",
+  "projects/voronoi_cli",
   "projects/voronoi_gui",
 ]
