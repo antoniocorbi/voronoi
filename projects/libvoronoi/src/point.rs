@@ -45,8 +45,8 @@ impl fmt::Display for Point {
 impl Point {
     pub fn random_01() -> Self {
         let mut rng = rand::rng(); // a local handle to the generator
-        let x: f32 = rng.random();
-        let y: f32 = rng.random();
+        let x: f32 = rng.random_range(0.0..=1.0);
+        let y: f32 = rng.random_range(0.0..=1.0);
 
         Point::new(x, y)
     }
