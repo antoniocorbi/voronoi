@@ -129,7 +129,7 @@ impl Point {
     }
 
     /// Implementación segura de point_prect usando Line
-    pub fn point_prect_safe(&self, p: &Point, target_x: f32) -> Self {
+    pub fn point_in_perp_rect_safe(&self, p: &Point, target_x: f32) -> Self {
         match self.bisector_line(p) {
             Line::Vertical { x } => {
                 // Si la mediatriz es vertical, x es constante.  ¿Qué
@@ -665,43 +665,43 @@ mod bisector_safe_tests {
         }
     }
 
-    // --- Tests para point_prect_safe ---
+    // --- Tests para point_in_perp_rect_safe ---
 
     #[test]
-    fn test_point_prect_safe_standard() {
+    fn test_point_in_perp_rect_safe_standard() {
         // Segmento de (0,0) a (4,4) -> Mediatriz y = -x + 4
         let p1 = Point::new(0.0, 0.0);
         let p2 = Point::new(4.0, 4.0);
 
         // Evaluamos en x = 1.0 -> y = -1.0 + 4.0 = 3.0
-        let res = p1.point_prect_safe(&p2, 1.0);
+        let res = p1.point_in_perp_rect_safe(&p2, 1.0);
 
         assert!(approx_eq(res.x, 1.0));
         assert!(approx_eq(res.y, 3.0));
     }
 
     #[test]
-    fn test_point_prect_safe_horizontal_segment() {
+    fn test_point_in_perp_rect_safe_horizontal_segment() {
         // Segmento horizontal p1(0,2) a p2(4,2) -> Mediatriz vertical x = 2.0
         let p1 = Point::new(0.0, 2.0);
         let p2 = Point::new(4.0, 2.0);
 
         // Aunque pasemos cualquier target_x, la mediatriz vertical fuerza x = 2.0
         // y devuelve la altura del punto medio (y = 2.0)
-        let res = p1.point_prect_safe(&p2, 5.0);
+        let res = p1.point_in_perp_rect_safe(&p2, 5.0);
 
         assert!(approx_eq(res.x, 2.0));
         assert!(approx_eq(res.y, 2.0));
     }
 
     #[test]
-    fn test_point_prect_safe_vertical_segment() {
+    fn test_point_in_perp_rect_safe_vertical_segment() {
         // Segmento vertical p1(3,0) a p2(3,4) -> Mediatriz horizontal y = 2.0
         let p1 = Point::new(3.0, 0.0);
         let p2 = Point::new(3.0, 4.0);
 
         // Evaluamos en x = 10.0 -> la altura se mantiene constante en y = 2.0
-        let res = p1.point_prect_safe(&p2, 10.0);
+        let res = p1.point_in_perp_rect_safe(&p2, 10.0);
 
         assert!(approx_eq(res.x, 10.0));
         assert!(approx_eq(res.y, 2.0));
