@@ -57,6 +57,8 @@ impl PointSet {
     }
 
     pub fn compute_perp_lines(&self) {
+        let mut lc = 0;
+
         if self.points.len() > 0 {
             let npoints = self.points.len() - 1;
             for i in 0..npoints {
@@ -66,7 +68,8 @@ impl PointSet {
                     let p2 = &self.points[j];
                     let bline = p1.bisector_line(p2);
 
-                    println!("p1[{}] -- {} -- p2[{}]", p1, bline, p2);
+                    lc += 1;
+                    println!("{lc:03}: p{i:02}[{}] -- {} -- p{j:02}[{}]", p1, bline, p2);
                 }
             }
         }
