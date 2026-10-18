@@ -36,15 +36,33 @@ pub struct Point {
 
 // -- Implementation: -----------------------------------------------------
 
-impl fmt::Display for Line {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+// ┌──────┐
+// │ Line │
+// └──────┘
+
+impl Line {
+    pub fn f(&self, x: f32) -> Point {
+        let ix = x; // If vertical line, take 'x' as 'y'
+
         match self {
-            Line::Vertical { .. } => write!(f, "Line::Vertical"),
-            Line::Sloped { m, .. } => write!(f, "Line::Sloped ({m:9.2})"),
+            Line::Vertical { x } => Point::new(*x, ix),
+            Line::Sloped { m, b } => Point::new(x, (m * x) + b),
         }
     }
 }
 
+impl fmt::Display for Line {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Line::Vertical { .. } => write!(f, "Line::Vertical"),
+            Line::Sloped { m, b } => write!(f, "Line::Sloped (m:{m:9.2} b:{b:.2})"),
+        }
+    }
+}
+
+// ┌───────┐
+// │ Point │
+// └───────┘
 impl fmt::Display for Point {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "({:.3}, {:.3})", self.x, self.y)

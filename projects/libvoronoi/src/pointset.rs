@@ -70,6 +70,10 @@ impl PointSet {
 
                     lc += 1;
                     println!("{lc:03}: p{i:02}[{}] -- {} -- p{j:02}[{}]", p1, bline, p2);
+                    for px in -1..=1 {
+                        let x: f32 = px as f32;
+                        println!("\t f({x:.2}) = {}", bline.f(x));
+                    }
                 }
             }
         }
