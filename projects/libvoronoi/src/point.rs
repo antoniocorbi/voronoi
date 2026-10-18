@@ -36,6 +36,15 @@ pub struct Point {
 
 // -- Implementation: -----------------------------------------------------
 
+impl fmt::Display for Line {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Line::Vertical { .. } => write!(f, "Line::Vertical"),
+            Line::Sloped { m, .. } => write!(f, "Line::Slopped ({m:9.2})"),
+        }
+    }
+}
+
 impl fmt::Display for Point {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "({:.3}, {:.3})", self.x, self.y)
