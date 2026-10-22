@@ -26,13 +26,15 @@
 // For more information, please refer to <http://unlicense.org>
 
 // -- Uses: ---------------------------------------------------------------
-use crate::point::Point;
+use crate::point::{Line, Point};
 use std::fmt;
+use std::ops::Index;
 
 // -- Data Types: ---------------------------------------------------------
 #[derive(Clone, PartialEq, Debug, Default)]
 pub struct PointSet {
     points: Vec<Point>,
+    bisects: Vec<Line>,
 }
 
 // -- Implementations: ----------------------------------------------------
@@ -46,6 +48,14 @@ impl fmt::Display for PointSet {
     }
 }
 
+impl Index<usize> for PointSet {
+    type Output = Point;
+
+    fn index(&self, idx: usize) -> &Self::Output {
+        &self.points[idx]
+    }
+}
+
 impl PointSet {
     pub fn new(n: usize) -> Self {
         // let points: Vec<_> = vec![Point::random(); n];
@@ -53,10 +63,14 @@ impl PointSet {
 
         // dbg!(points.clone());
 
-        PointSet { points }
+        PointSet {
+            points,
+            bisects: vec![],
+        }
     }
 
-    pub fn compute_perp_lines(&self) {
+    pub fn compute_perp_lines(&mut self) {
+        let mut blines: Vec<Line> = vec![];
         let mut lc = 0;
 
         if self.points.len() > 0 {
@@ -68,15 +82,26 @@ impl PointSet {
                     let p2 = &self.points[j];
                     let bline = p1.bisector_line(p2);
 
+                    blines.push(bline);
                     lc += 1;
-                    println!("{lc:03}: p{i:02}[{}] -- {} -- p{j:02}[{}]", p1, bline, p2);
-                    for px in -1..=1 {
-                        let x: f32 = px as f32;
-                        println!("\t f({x:.2}) = {}", bline.f(x));
-                    }
+
+                    // println!("{lc:03}: p{i:02}[{}] -- {} -- p{j:02}[{}]", p1, bline, p2);
+                    // for px in -1..=1 {
+                    //     let x: f32 = px as f32;
+                    //     println!("\t f({x:.2}) = {}", bline.f(x));
+                    // }
                 }
             }
+            self.bisects = blines;
         }
+    }
+
+    pub fn npoints(&self) -> usize {
+        self.points.len()
+    }
+
+    pub fn nbisect_lines(&self) -> usize {
+        self.bisects.len()
     }
 }
 
