@@ -111,10 +111,31 @@ mod point_set_tests {
     use super::*;
 
     #[test]
+    fn test_point_set_distinct_elements() {
+        // Con un número razonable de puntos aleatorios, es altamente improbable
+        // que todos sean exactamente idénticos (salvo colisiones de punto flotante extremas).
+        let ps = PointSet::new(10);
+
+        if ps.points.len() > 1 {
+            let first = ps.points[0];
+            let all_same = ps.points.iter().all(|p| p.x == first.x && p.y == first.y);
+            assert!(!all_same, "Todos los puntos aleatorios generados son idénticos, posible fallo en la aleatoriedad.");
+        }
+    }
+
+    // --- Tests para el constructor new() y propiedades de PointSet ---
+
+    fn approx_eq(a: f32, b: f32) -> bool {
+        const EPSILON: f32 = 1e-6;
+        (a - b).abs() < EPSILON
+    }
+
+    #[test]
     fn test_point_set_new_empty() {
         let ps = PointSet::new(0);
         assert_eq!(ps.points.len(), 0);
         assert!(ps.points.is_empty());
+        assert!(ps.bisects.is_empty());
     }
 
     #[test]
@@ -124,16 +145,16 @@ mod point_set_tests {
 
         // Verifica que la cantidad de puntos coincida exactamente con n
         assert_eq!(ps.points.len(), n);
+        assert!(ps.bisects.is_empty());
     }
 
     #[test]
     fn test_point_set_random_coordinates_bounds() {
-        // Generamos un conjunto grande para validar los límites de la aleatoriedad
         let n = 100;
         let ps = PointSet::new(n);
 
         for point in &ps.points {
-            // Asumiendo que Point::random() genera valores entre 0.0 y 1.0 (inclusivo)
+            // Verifica que Point::random_01() genere valores dentro de [0.0, 1.0]
             assert!(
                 point.x >= 0.0 && point.x <= 1.0,
                 "Coordenada x fuera de rango: {}",
@@ -145,22 +166,52 @@ mod point_set_tests {
                 point.y
             );
 
-            // Verificamos que no se generen valores NaN por error en el generador
             assert!(!point.x.is_nan());
             assert!(!point.y.is_nan());
         }
     }
 
-    #[test]
-    fn test_point_set_distinct_elements() {
-        // Con un número razonable de puntos aleatorios, es altamente improbable
-        // que todos sean exactamente idénticos (salvo colisiones de punto flotante extremas).
-        let ps = PointSet::new(10);
+    // --- Tests para la implementación de Index<usize> ---
 
-        if ps.points.len() > 1 {
-            let first = ps.points[0];
-            let all_same = ps.points.iter().all(|p| p.x == first.x && p.y == first.y);
-            assert!(!all_same, "Todos los puntos aleatorios generados son idénticos, posible fallo en la aleatoriedad.");
-        }
+    #[test]
+    fn test_point_set_index_valid() {
+        let p1 = Point::new(1.0, 2.0);
+        let p2 = Point::new(3.0, 4.0);
+        let p3 = Point::new(5.0, 6.0);
+
+        // Usamos Default para rellenar automáticamente bisects como vec![]
+        let ps = PointSet {
+            points: vec![p1, p2, p3],
+            ..Default::default()
+        };
+
+        assert_eq!(ps[0], p1);
+        assert_eq!(ps[1], p2);
+        assert_eq!(ps[2], p3);
+    }
+
+    #[test]
+    fn test_point_set_index_reference_type() {
+        let p = Point::new(10.0, 20.0);
+        let ps = PointSet {
+            points: vec![p],
+            bisects: vec![],
+        };
+
+        let pt_ref: &Point = &ps[0];
+        assert_eq!(pt_ref.x, 10.0);
+        assert_eq!(pt_ref.y, 20.0);
+    }
+
+    #[test]
+    #[should_panic(expected = "index out of bounds")]
+    fn test_point_set_index_out_of_bounds() {
+        let ps = PointSet {
+            points: vec![Point::new(0.0, 0.0)],
+            ..Default::default()
+        };
+
+        // Debe disparar un panic controlado por el slice interno
+        let _ = ps[5];
     }
 }
