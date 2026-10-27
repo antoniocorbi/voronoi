@@ -18,6 +18,8 @@ use egui::{
     Frame, Pos2, Rect, Ui,
 };
 
+use crate::worlds::Worlds;
+
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 // #[derive(serde::Deserialize, serde::Serialize)]
 // #[serde(default)] // if we add new fields, give them default values when deserializing old state
@@ -134,70 +136,4 @@ fn powered_by_egui_and_eframe(ui: &mut egui::Ui) {
         );
         ui.label(".");
     });
-}
-
-// ╔════════╗
-// ║ Worlds ║
-// ╚════════╝
-// -- : -------------------------------------------------------------------
-#[derive(Clone)]
-pub struct Worlds {
-    pub world_rect: Rect,
-    pub screen_rect: Rect,
-    pub w2s: emath::RectTransform,
-    pub s2w: emath::RectTransform,
-}
-
-impl Worlds {
-    fn new(wr: Rect, sr: Rect) -> Self {
-        let w2s = emath::RectTransform::from_to(wr, sr);
-        let s2w = w2s.inverse();
-
-        Self {
-            world_rect: wr,
-            screen_rect: sr,
-            w2s,
-            s2w,
-        }
-    }
-
-    pub fn update_screen_rect(&mut self, screen_rect: Rect) {
-        //println!("Update worlds sr & transforms");
-
-        // Store the canvas rect
-        self.screen_rect = screen_rect;
-
-        // Compute world2screen and screen2world transforms
-        self.w2s = emath::RectTransform::from_to(self.world_rect, self.screen_rect);
-        self.s2w = self.w2s.inverse();
-    }
-
-    pub fn pos2_to_screen(&self, pos: Pos2) -> Pos2 {
-        // if !self.world_rect.contains(pos) {
-        //     println!("pos: {:?} out of wr", pos);
-        // }
-        // Check that point x,y is inside its world_rect.
-        // assert!(self.world_rect.contains(pos));
-        self.w2s.transform_pos_clamped(pos)
-    }
-
-    pub fn pos2_to_world(&self, pos: Pos2) -> Pos2 {
-        // Check that point x,y is inside its screen_rect.
-        //assert!(self.screen_rect.contains(pos));
-        self.s2w.transform_pos_clamped(pos)
-    }
-
-    pub fn rect_to_screen(&self, rect: Rect) -> Rect {
-        // Check that 'rect' is inside its world_rect.
-        // assert!(self.world_rect.contains(rect.min));
-        // assert!(self.world_rect.contains(rect.max));
-        self.w2s.transform_rect(rect)
-    }
-
-    pub fn rect_to_world(&self, rect: Rect) -> Rect {
-        // Check that 'rect' is inside its screen_rect.
-        // assert!(self.screen_rect.contains(rect.min));
-        // assert!(self.screen_rect.contains(rect.max));
-        self.s2w.transform_rect(rect)
-    }
 }
