@@ -13,8 +13,8 @@ targets = ["x86_64-unknown-linux-gnu", "wasm32-unknown-unknown"]
 
 [dependencies]
 #libvoronoi = { path = "../libvoronoi" }
-egui = "0.36.0"
-eframe = { version = "0.36.0", features = ["persistence"] }
+egui = "0.37.0"
+eframe = { version = "0.37.0", features = ["persistence"] }
 log = "0.4.34"
 
 # You only need serde if you want app persistence:
