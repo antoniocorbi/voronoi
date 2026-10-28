@@ -32,13 +32,13 @@ use std::ops::Index;
 
 // -- Data Types: ---------------------------------------------------------
 #[derive(Clone, PartialEq, Debug, Default)]
-pub struct PointSet {
+pub struct Voronoi {
     points: Vec<Point>,
     bisects: Vec<Line>,
 }
 
 // -- Implementations: ----------------------------------------------------
-impl fmt::Display for PointSet {
+impl fmt::Display for Voronoi {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for p in &self.points {
             let _ = writeln!(f, "{}", p);
@@ -48,7 +48,7 @@ impl fmt::Display for PointSet {
     }
 }
 
-impl Index<usize> for PointSet {
+impl Index<usize> for Voronoi {
     type Output = Point;
 
     fn index(&self, idx: usize) -> &Self::Output {
@@ -56,14 +56,14 @@ impl Index<usize> for PointSet {
     }
 }
 
-impl PointSet {
+impl Voronoi {
     pub fn new(n: usize) -> Self {
         // let points: Vec<_> = vec![Point::random(); n];
         let points: Vec<_> = (0..n).map(|_| Point::random_01()).collect();
 
         // dbg!(points.clone());
 
-        PointSet {
+        Voronoi {
             points,
             bisects: vec![],
         }
@@ -107,14 +107,14 @@ impl PointSet {
 
 // -- Tests: --------------------------------------------------------------
 #[cfg(test)]
-mod point_set_tests {
+mod voronoi_tests {
     use super::*;
 
     #[test]
-    fn test_point_set_distinct_elements() {
+    fn test_voronoi_distinct_elements() {
         // Con un número razonable de puntos aleatorios, es altamente improbable
         // que todos sean exactamente idénticos (salvo colisiones de punto flotante extremas).
-        let ps = PointSet::new(10);
+        let ps = Voronoi::new(10);
 
         if ps.points.len() > 1 {
             let first = ps.points[0];
@@ -123,7 +123,7 @@ mod point_set_tests {
         }
     }
 
-    // --- Tests para el constructor new() y propiedades de PointSet ---
+    // --- Tests para el constructor new() y propiedades de Voronoi ---
 
     fn approx_eq(a: f32, b: f32) -> bool {
         const EPSILON: f32 = 1e-6;
@@ -131,17 +131,17 @@ mod point_set_tests {
     }
 
     #[test]
-    fn test_point_set_new_empty() {
-        let ps = PointSet::new(0);
+    fn test_voronoi_new_empty() {
+        let ps = Voronoi::new(0);
         assert_eq!(ps.points.len(), 0);
         assert!(ps.points.is_empty());
         assert!(ps.bisects.is_empty());
     }
 
     #[test]
-    fn test_point_set_new_standard_size() {
+    fn test_voronoi_new_standard_size() {
         let n = 50;
-        let ps = PointSet::new(n);
+        let ps = Voronoi::new(n);
 
         // Verifica que la cantidad de puntos coincida exactamente con n
         assert_eq!(ps.points.len(), n);
@@ -149,9 +149,9 @@ mod point_set_tests {
     }
 
     #[test]
-    fn test_point_set_random_coordinates_bounds() {
+    fn test_voronoi_random_coordinates_bounds() {
         let n = 100;
-        let ps = PointSet::new(n);
+        let ps = Voronoi::new(n);
 
         for point in &ps.points {
             // Verifica que Point::random_01() genere valores dentro de [0.0, 1.0]
@@ -174,13 +174,13 @@ mod point_set_tests {
     // --- Tests para la implementación de Index<usize> ---
 
     #[test]
-    fn test_point_set_index_valid() {
+    fn test_voronoi_index_valid() {
         let p1 = Point::new(1.0, 2.0);
         let p2 = Point::new(3.0, 4.0);
         let p3 = Point::new(5.0, 6.0);
 
         // Usamos Default para rellenar automáticamente bisects como vec![]
-        let ps = PointSet {
+        let ps = Voronoi {
             points: vec![p1, p2, p3],
             ..Default::default()
         };
@@ -191,9 +191,9 @@ mod point_set_tests {
     }
 
     #[test]
-    fn test_point_set_index_reference_type() {
+    fn test_voronoi_index_reference_type() {
         let p = Point::new(10.0, 20.0);
-        let ps = PointSet {
+        let ps = Voronoi {
             points: vec![p],
             bisects: vec![],
         };
@@ -205,8 +205,8 @@ mod point_set_tests {
 
     #[test]
     #[should_panic(expected = "index out of bounds")]
-    fn test_point_set_index_out_of_bounds() {
-        let ps = PointSet {
+    fn test_voronoi_index_out_of_bounds() {
+        let ps = Voronoi {
             points: vec![Point::new(0.0, 0.0)],
             ..Default::default()
         };

@@ -16,5 +16,5 @@
 // -- Modules: ------------------------------------------------------------
 // use rand::prelude::*;
 pub mod point;
-pub mod pointset;
 pub mod version;
+pub mod voronoi;
