@@ -31,7 +31,7 @@ pub struct Worlds {
 }
 
 impl Worlds {
-    fn new(wr: Rect, sr: Rect) -> Self {
+    pub fn new(wr: Rect, sr: Rect) -> Self {
         let w2s = emath::RectTransform::from_to(wr, sr);
         let s2w = w2s.inverse();
 

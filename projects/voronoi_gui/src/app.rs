@@ -40,7 +40,7 @@ pub struct VoronoiApp {
     // label: String,
 
     // #[serde(skip)] // This how you opt-out of serialization of a field
-    npoints: u32,
+    npoints: usize,
     // ╔════════════╗
     // ║ Model data ║
     // ╚════════════╝
@@ -58,11 +58,13 @@ trait Gui {
 // -- Impl. Blocks: -------------------------------------------------------
 impl Default for VoronoiApp {
     fn default() -> Self {
+        let npoints: usize = 2;
+
         Self {
             // Example stuff:
-            npoints: 2,
+            npoints,
             worlds: None,
-            voronoi: None,
+            voronoi: Some(Voronoi::new(npoints)),
         }
     }
 }
@@ -114,13 +116,30 @@ impl Gui for VoronoiApp {
             //     ui.text_edit_singleline(&mut self.label);
             // });
 
-            ui.add(
-                egui::Slider::new(&mut self.npoints, 2..=200)
-                    .text(egui::RichText::new("Random points").color(egui::Color32::LIGHT_BLUE)),
-            );
-            if ui.button("Increment").clicked() {
-                self.npoints += 1;
-            }
+            // ui.add(
+            //     egui::Slider::new(&mut self.npoints, 2..=200)
+            //         .text(egui::RichText::new("Random points").color(egui::Color32::LIGHT_BLUE)),
+            // );
+            // if ui.button("Increment").clicked() {
+            //     self.npoints += 1;
+            // }
+
+            ui.horizontal(|ui| {
+                ui.label(egui::RichText::new("Random points:").color(egui::Color32::LIGHT_BLUE));
+                let response = ui.add(
+                    egui::DragValue::new(&mut self.npoints)
+                        .clamp_existing_to_range(true)
+                        .range(2..=200),
+                );
+                if response.dragged() {
+                    let mut voronoi = self
+                        .voronoi
+                        .as_mut()
+                        .expect("voronoi field is not initialized");
+                    // println!("Resizing: {}", self.npoints);
+                    voronoi.resize(self.npoints);
+                }
+            });
 
             ui.separator();
             self.create_drawing_widget(ui);
@@ -167,9 +186,9 @@ impl Gui for VoronoiApp {
 
                         // 1. Comprobamos el click izquierdo
                         if response.secondary_clicked() {
-                            //println!("¡Click derecho detectado en el Painter!");
+                            // println!("¡Click derecho detectado en el Painter!");
                             if let Some(pos) = response.interact_pointer_pos() {
-                                // println!("Añadir Repeller!: Click en la posición: {:?}", pos);
+                                println!("Right Click en la posición: {:?}", pos);
                                 // let wpos = self.worlds.as_ref().unwrap().pos2_to_world(pos);
                                 // let wx = wpos.x;
                                 // let wy = wpos.y;
@@ -194,15 +213,15 @@ impl Gui for VoronoiApp {
                         if response.middle_clicked() {
                             //println!("¡Click central detectado en el Painter!");
                             if let Some(pos) = response.interact_pointer_pos() {
-                                println!("Click en la posición: {:?}", pos);
+                                println!("Middle Click en la posición: {:?}", pos);
                             }
                             //self.show_data();
                         }
 
                         // 3. Comprobamos el click izquierdo
                         if response.clicked() {
-                            //println!("¡Click izquierdo detectado en el Painter!");
                             if let Some(pos) = response.interact_pointer_pos() {
+                                println!("Left Click en la posición: {:?}", pos);
                                 //let wpos = self.worlds.as_ref().unwrap().pos2_to_world(pos);
                                 // let wx = wpos.x as usize;
                                 // let wy = wpos.y as usize;
@@ -288,7 +307,10 @@ impl Gui for VoronoiApp {
                             // ctx.send_viewport_cmd(egui::ViewportCommand::CursorVisible(true));
                         }
 
-                        // Draw life-beings
+                        // ┌──────────────┐
+                        // │ Drawing code │
+                        // └──────────────┘
+
                         // for y in 0..self.gol.as_ref().unwrap().nrows() {
                         //     for x in 0..self.gol.as_ref().unwrap().ncols() {
                         //         let alive = self.gol.as_ref().unwrap().cell(x, y) == Cell::Used;
@@ -320,6 +342,29 @@ impl VoronoiApp {
         // }
 
         Default::default()
+    }
+
+    pub fn create_worlds(&mut self, wr: Rect, sr: Rect) {
+        self.worlds = Some(Worlds::new(wr, sr));
+    }
+
+    pub fn init_worlds(&mut self, sr: Rect) {
+        if self.worlds.is_none() {
+            let wr = egui::Rect::from_min_max(constants::WR_MIN.into(), constants::WR_MAX.into());
+            self.create_worlds(wr, sr);
+            // self.set_status_text(&format!("Worlds created"), egui::Color32::RED);
+        } else {
+            // Update worlds screen_rect
+            self.worlds.as_mut().unwrap().update_screen_rect(sr);
+        }
+    }
+
+    pub fn pos2_to_screen(&self, pos: Pos2) -> Pos2 {
+        self.worlds.as_ref().unwrap().pos2_to_screen(pos)
+    }
+
+    pub fn pos2_to_world(&self, pos: Pos2) -> Pos2 {
+        self.worlds.as_ref().unwrap().pos2_to_world(pos)
     }
 }
 

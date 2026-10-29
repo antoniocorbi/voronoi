@@ -69,6 +69,14 @@ impl Voronoi {
         }
     }
 
+    pub fn resize(&mut self, n: usize) {
+        let points: Vec<_> = (0..n).map(|_| Point::random_01()).collect();
+
+        self.points = points;
+        self.bisects.clear();
+        self.bisects.shrink_to_fit();
+    }
+
     pub fn compute_perp_lines(&mut self) {
         let mut blines: Vec<Line> = vec![];
         let mut lc = 0;
