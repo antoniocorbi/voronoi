@@ -28,3 +28,6 @@ pub const WR_MAX: [f32; 2] = [1.0, 1.0];
 // Canvas dimensions
 pub const CANVAS_W: f32 = 1024.0;
 pub const CANVAS_H: f32 = 768.0;
+
+// MAX VORONOI POINTS
+pub const MAX_POINTS: usize = 200;

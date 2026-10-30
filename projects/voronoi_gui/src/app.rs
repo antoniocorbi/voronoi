@@ -57,6 +57,7 @@ trait Gui {
     // fn draw_point(&self, painter: &Painter, x: f32, y: f32, color: Color32);
     fn draw_point(&self, painter: &Painter, p: Pos2, color: Color32);
     fn draw_points(&self, painter: &Painter, color: Color32);
+    fn draw_bisects(&self, painter: &Painter, color: Color32);
 }
 
 // -- Impl. Blocks: -------------------------------------------------------
@@ -75,13 +76,26 @@ impl Default for VoronoiApp {
 
 impl Gui for VoronoiApp {
     fn draw_point(&self, painter: &Painter, p: Pos2, color: Color32) {
-        let radius = 4.0; // Radio del punto en píxeles
+        let radius = 3.0; // Radio del punto en píxeles
                           //let center = Pos2::new(x, y);
         let center = p;
         painter.circle_filled(center, radius, color);
     }
 
     fn draw_points(&self, painter: &Painter, color: Color32) {
+        let voronoi = self
+            .voronoi
+            .as_ref()
+            .expect("voronoi field is not initialized");
+        for &p in &voronoi.points {
+            let wpos: Pos2 = [p.x, p.y].into();
+            let spos = self.pos2_to_screen(wpos);
+
+            self.draw_point(&painter, spos, color);
+        }
+    }
+
+    fn draw_bisects(&self, painter: &Painter, color: Color32) {
         let voronoi = self
             .voronoi
             .as_ref()
@@ -153,15 +167,17 @@ impl Gui for VoronoiApp {
                 let response = ui.add(
                     egui::DragValue::new(&mut self.npoints)
                         .clamp_existing_to_range(true)
-                        .range(2..=200),
+                        .range(2..=constants::MAX_POINTS),
                 );
-                if response.dragged() {
+                //if response.dragged() {
+                if response.drag_stopped_by(egui::PointerButton::Primary) {
                     let mut voronoi = self
                         .voronoi
                         .as_mut()
                         .expect("voronoi field is not initialized");
                     // println!("Resizing: {}", self.npoints);
                     voronoi.resize(self.npoints);
+                    voronoi.compute_perp_lines();
                 }
             });
 
@@ -294,7 +310,7 @@ impl Gui for VoronoiApp {
                         // │ Drawing code │
                         // └──────────────┘
                         // Draw voronoi points.
-                        self.draw_points(&painter, Color32::YELLOW);
+                        self.draw_points(&painter, Color32::LIGHT_RED);
 
                         // Sleep a bit
                         // std::thread::sleep(Duration::from_micros(
