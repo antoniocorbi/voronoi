@@ -23,7 +23,7 @@ use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssi
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Line {
     /// Línea definida por y = mx + b
-    Sloped { m: f32, b: f32 },
+    Sloped { m: f32, b: f32, mp: Point },
     /// Línea vertical x = c
     Vertical { x: f32 },
 }
@@ -46,7 +46,7 @@ impl Line {
 
         match self {
             Line::Vertical { x } => Point::new(*x, ix),
-            Line::Sloped { m, b } => Point::new(x, (m * x) + b),
+            Line::Sloped { m, b, mp } => Point::new(x, (m * x) + b),
         }
     }
 }
@@ -55,7 +55,7 @@ impl fmt::Display for Line {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Line::Vertical { .. } => write!(f, "Line::Vertical"),
-            Line::Sloped { m, b } => write!(f, "Line::Sloped (m:{m:9.2} b:{b:.2})"),
+            Line::Sloped { m, b, mp } => write!(f, "Line::Sloped (m:{m:9.2} b:{b:.2} mp: {mp})"),
         }
     }
 }
@@ -145,14 +145,18 @@ impl Point {
 
         // Si el segmento es vertical (dx = 0), la mediatriz es horizontal (y = mp.y)
         if dx.abs() < f32::EPSILON {
-            return Line::Sloped { m: 0.0, b: mp.y };
+            return Line::Sloped {
+                m: 0.0,
+                b: mp.y,
+                mp,
+            };
         }
 
         // Pendiente del segmento original y su perpendicular (-dx / dy)
         let m_perp = -dx / dy;
         let b = mp.y - m_perp * mp.x;
 
-        Line::Sloped { m: m_perp, b }
+        Line::Sloped { m: m_perp, b, mp }
     }
 
     /// Implementación segura de point_prect usando Line
@@ -165,7 +169,7 @@ impl Point {
                 let mp = self.mid_point(p);
                 Point::new(x, mp.y)
             }
-            Line::Sloped { m, b } => {
+            Line::Sloped { m, b, mp } => {
                 let y = m * target_x + b;
                 Point::new(target_x, y)
             }

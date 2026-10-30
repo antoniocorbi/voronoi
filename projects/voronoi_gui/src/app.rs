@@ -25,7 +25,7 @@ use egui::{
     pos2, Color32, CornerRadius, Frame, Painter, PointerButton, Pos2, Rect, Sense, Stroke, Ui,
     Vec2,
 };
-use libvoronoi::voronoi::Voronoi;
+use libvoronoi::{point::Line, voronoi::Voronoi};
 use std::time::Duration;
 
 // -- Types: --------------------------------------------------------------
@@ -56,6 +56,7 @@ trait Gui {
     fn create_drawing_widget(&mut self, ui: &mut Ui);
     // fn draw_point(&self, painter: &Painter, x: f32, y: f32, color: Color32);
     fn draw_point(&self, painter: &Painter, p: Pos2, color: Color32);
+    fn draw_line(&self, painter: &Painter, p1: Pos2, p2: Pos2, color: Color32);
     fn draw_points(&self, painter: &Painter, color: Color32);
     fn draw_bisects(&self, painter: &Painter, color: Color32);
 }
@@ -82,6 +83,15 @@ impl Gui for VoronoiApp {
         painter.circle_filled(center, radius, color);
     }
 
+    fn draw_line(&self, painter: &Painter, p1: Pos2, p2: Pos2, color: Color32) {
+        // Definimos el grosor de la línea (p. ej., 1.5 píxeles) y su color
+        let stroke = Stroke::new(1.5, color);
+        let p1 = self.pos2_to_screen(p1);
+        let p2 = self.pos2_to_screen(p2);
+
+        painter.line_segment([p1, p2], stroke);
+    }
+
     fn draw_points(&self, painter: &Painter, color: Color32) {
         let voronoi = self
             .voronoi
@@ -100,11 +110,32 @@ impl Gui for VoronoiApp {
             .voronoi
             .as_ref()
             .expect("voronoi field is not initialized");
-        for &p in &voronoi.points {
-            let wpos: Pos2 = [p.x, p.y].into();
+        for &bl in &voronoi.bisects {
+            let wpos: Pos2 = match bl {
+                Line::Sloped { m, b, mp } => [mp.x, mp.y].into(),
+                _ => [0.0, 0.0].into(),
+            };
             let spos = self.pos2_to_screen(wpos);
 
             self.draw_point(&painter, spos, color);
+        }
+
+        //println!("V.bisects len: {}", voronoi.bisects.len());
+        if voronoi.bisects.len() > 0 {
+            for bl in 0..voronoi.bisects.len() - 1 {
+                let p1 = match voronoi.bisects[bl] {
+                    Line::Sloped { m, b, mp } => [mp.x, mp.y].into(),
+                    _ => [0.0, 0.0].into(),
+                };
+                let p2 = match voronoi.bisects[bl + 1] {
+                    Line::Sloped { m, b, mp } => [mp.x, mp.y].into(),
+                    _ => [0.0, 0.0].into(),
+                };
+
+                // dbg!(p1);
+                // dbg!(p2);
+                self.draw_line(painter, p1, p2, Color32::WHITE);
+            }
         }
     }
 
@@ -311,6 +342,8 @@ impl Gui for VoronoiApp {
                         // └──────────────┘
                         // Draw voronoi points.
                         self.draw_points(&painter, Color32::LIGHT_RED);
+                        // Draw bisects
+                        self.draw_bisects(&painter, Color32::YELLOW);
 
                         // Sleep a bit
                         // std::thread::sleep(Duration::from_micros(
