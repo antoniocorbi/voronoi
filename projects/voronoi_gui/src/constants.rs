@@ -17,14 +17,13 @@
 pub const UI_ZOOM: f32 = 2.0;
 
 // Thread sleep in microseconds
-
 pub const SLEEP: u64 = 40000;
 
 // World dimensions
-pub const NCOLS: f32 = 20.0;
-pub const NROWS: f32 = 20.0;
+// pub const NCOLS: f32 = 20.0;
+// pub const NROWS: f32 = 20.0;
 pub const WR_MIN: [f32; 2] = [0.0, 0.0];
-pub const WR_MAX: [f32; 2] = [NROWS, NCOLS];
+pub const WR_MAX: [f32; 2] = [1.0, 1.0];
 
 // Canvas dimensions
 pub const CANVAS_W: f32 = 1024.0;

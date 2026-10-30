@@ -33,8 +33,8 @@ use std::ops::Index;
 // -- Data Types: ---------------------------------------------------------
 #[derive(Clone, PartialEq, Debug, Default)]
 pub struct Voronoi {
-    points: Vec<Point>,
-    bisects: Vec<Line>,
+    pub points: Vec<Point>,
+    pub bisects: Vec<Line>,
 }
 
 // -- Implementations: ----------------------------------------------------

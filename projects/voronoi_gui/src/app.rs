@@ -22,7 +22,8 @@ use crate::{constants, worlds::Worlds};
 use egui::{
     emath::{self, RectTransform},
     epaint::Hsva,
-    pos2, Color32, CornerRadius, Frame, PointerButton, Pos2, Rect, Sense, Stroke, Ui, Vec2,
+    pos2, Color32, CornerRadius, Frame, Painter, PointerButton, Pos2, Rect, Sense, Stroke, Ui,
+    Vec2,
 };
 use libvoronoi::voronoi::Voronoi;
 use std::time::Duration;
@@ -53,6 +54,9 @@ trait Gui {
     fn top_panel(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame);
     fn central_panel(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame);
     fn create_drawing_widget(&mut self, ui: &mut Ui);
+    // fn draw_point(&self, painter: &Painter, x: f32, y: f32, color: Color32);
+    fn draw_point(&self, painter: &Painter, p: Pos2, color: Color32);
+    fn draw_points(&self, painter: &Painter, color: Color32);
 }
 
 // -- Impl. Blocks: -------------------------------------------------------
@@ -70,6 +74,26 @@ impl Default for VoronoiApp {
 }
 
 impl Gui for VoronoiApp {
+    fn draw_point(&self, painter: &Painter, p: Pos2, color: Color32) {
+        let radius = 4.0; // Radio del punto en píxeles
+                          //let center = Pos2::new(x, y);
+        let center = p;
+        painter.circle_filled(center, radius, color);
+    }
+
+    fn draw_points(&self, painter: &Painter, color: Color32) {
+        let voronoi = self
+            .voronoi
+            .as_ref()
+            .expect("voronoi field is not initialized");
+        for &p in &voronoi.points {
+            let wpos: Pos2 = [p.x, p.y].into();
+            let spos = self.pos2_to_screen(wpos);
+
+            self.draw_point(&painter, spos, color);
+        }
+    }
+
     fn top_panel(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         egui::Panel::top("top_panel").show(ui, |ui| {
             //ui.heading("Voronoi Diagram");
@@ -180,9 +204,13 @@ impl Gui for VoronoiApp {
                         let (response, painter) = ui.allocate_painter(
                             // ui.available_size() - [2.0, 45.0].into(),
                             canvas_size,
-                            Sense::drag() | Sense::click(), // ¡Importante! Detectar arrastre (clic + movimiento)
-                                                            //Sense::DRAG | Sense::CLICK,
+                            Sense::drag() | Sense::click(),
+                            // ¡Importante! Detectar arrastre (clic + movimiento), Sense::DRAG | Sense::CLICK,
                         );
+
+                        // If there is no worlds object defined,
+                        // define it, else update screen_rect
+                        self.init_worlds(response.rect);
 
                         // 1. Comprobamos el click izquierdo
                         if response.secondary_clicked() {
@@ -222,45 +250,21 @@ impl Gui for VoronoiApp {
                         if response.clicked() {
                             if let Some(pos) = response.interact_pointer_pos() {
                                 println!("Left Click en la posición: {:?}", pos);
-                                //let wpos = self.worlds.as_ref().unwrap().pos2_to_world(pos);
-                                // let wx = wpos.x as usize;
-                                // let wy = wpos.y as usize;
-                                //
-                                // let status = !self.gol.as_ref().unwrap().cell(wx, wy);
-                                // self.gol.as_mut().unwrap().set_cell(wx, wy, status);
 
-                                // let computed_screen_xy =
-                                //     self.pos2_to_screen([wpos.x, wpos.y].into());
+                                // Show random points coords.
+                                let voronoi = self
+                                    .voronoi
+                                    .as_ref()
+                                    .expect("voronoi field is not initialized");
+                                for &p in &voronoi.points {
+                                    let wpos: Pos2 = [p.x, p.y].into();
+                                    let spos = self.pos2_to_screen(wpos);
 
-                                // println!(
-                                //     "Screenpos: x[{}],y[{}],wx[{}],wy[{}]",
-                                //     pos.x, pos.y, wx, wy
-                                // );
-
-                                //println!("{}\n", self.gol.as_ref().unwrap());
-
-                                // self.set_status_text(
-                                //     &format!(
-                                //         //"sx: {} , sy: {} , wx: {} , wy: {}",
-                                //         "particle system @ [{:.2},{:.2}]",
-                                //         wx, wy
-                                //     ),
-                                //     egui::Color32::LIGHT_RED,
-                                // );
-
-                                // let wr = Rect::from_min_max(
-                                //     constants::WR_MIN.into(),
-                                //     constants::WR_MAX.into(),
-                                //);
-                                // let ps = ParticleSystem::new(
-                                //     constants::NPARTICLES,
-                                //     wx,
-                                //     wy,
-                                //     wr,
-                                //     self.particle_size,
-                                //     self.particle_mass,
-                                // );
-                                // self.psystems.push(ps);
+                                    println!(
+                                        "Screenpos: sx[{}],sy[{}],wx[{}],wy[{}]",
+                                        spos.x, spos.y, wpos.x, wpos.y
+                                    );
+                                }
                             }
                         }
 
@@ -276,27 +280,6 @@ impl Gui for VoronoiApp {
                                 // Hide Mouse
                                 // let ctx = ui.ctx();
                                 // ctx.send_viewport_cmd(egui::ViewportCommand::CursorVisible(false));
-
-                                unsafe {
-                                    // dbg!(wx);
-                                    // dbg!(WX_LAST);
-                                    //
-                                    // dbg!(wy);
-                                    // dbg!(WY_LAST);
-
-                                    // If coords inside map
-                                    // if wx < self.gol.as_ref().unwrap().ncols()
-                                    //     && wy < self.gol.as_ref().unwrap().nrows()
-                                    // {
-                                    //     // If mouse cursor has moved
-                                    //     if wx != WX_LAST || wy != WY_LAST {
-                                    //         WX_LAST = wx;
-                                    //         WY_LAST = wy;
-                                    //         let status = !self.gol.as_ref().unwrap().cell(wx, wy);
-                                    //         self.gol.as_mut().unwrap().set_cell(wx, wy, status);
-                                    //     }
-                                    // }
-                                }
                             }
                         }
 
@@ -310,13 +293,8 @@ impl Gui for VoronoiApp {
                         // ┌──────────────┐
                         // │ Drawing code │
                         // └──────────────┘
-
-                        // for y in 0..self.gol.as_ref().unwrap().nrows() {
-                        //     for x in 0..self.gol.as_ref().unwrap().ncols() {
-                        //         let alive = self.gol.as_ref().unwrap().cell(x, y) == Cell::Used;
-                        //         self.draw_box(x, y, alive, &painter, response.rect);
-                        //     }
-                        // }
+                        // Draw voronoi points.
+                        self.draw_points(&painter, Color32::YELLOW);
 
                         // Sleep a bit
                         // std::thread::sleep(Duration::from_micros(
